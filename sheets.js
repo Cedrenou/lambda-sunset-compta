@@ -67,7 +67,7 @@ export async function appendToSheet(datas) {
         data.article,
         data.beneficiaire,
         data.montant_total,
-        (parseFloat((data.frais_port || '0').replace(',', '.')) - parseFloat((data.reduction || '0').replace(',', '.'))).toFixed(2),
+        (parseFloat((data.frais_port || '0').replace(',', '.')) - parseFloat((data.reduction || '0').replace(',', '.'))).toFixed(2).replace('.', ','),
         data.montant_commande,
         data.frais_protection,
         data.transaction_id,
