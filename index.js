@@ -30,6 +30,7 @@ export const handler = async () => {
                 continue;
             }
             datas.push(data);
+            console.log(`[Labellisation] Tentative d'ajout du label pour le message ID: ${msg.id}`);
             try {
                 await addLabelToMessage(accessToken, msg.id);
             } catch (err) {

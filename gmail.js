@@ -77,7 +77,7 @@ export async function ensureLabelId(accessToken, labelName) {
 }
 
 
-export async function addLabelToMessage(accessToken, messageId, labelName = 'vinted-traite') {
+export async function addLabelToMessage(accessToken, messageId, labelName = 'vinted-achat') {
     const labelId = await ensureLabelId(accessToken, labelName);
 
     await axios.post(
@@ -88,7 +88,9 @@ export async function addLabelToMessage(accessToken, messageId, labelName = 'vin
         {
             headers: { Authorization: `Bearer ${accessToken}` }
         }
-    );
+    ).then(response => {
+        console.log(`[Labellisation API] Réponse pour ${messageId}:`, response.data);
+    });
 
     console.log(`🏷️ Message ${messageId} étiqueté avec "${labelName}"`);
 }
