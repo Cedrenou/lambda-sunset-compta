@@ -3,33 +3,33 @@ import {addLabelToMessage, getMessageContent, listVintedMessages} from './gmail.
 import {extractVintedData} from './parser.js'
 import {appendToSheet} from './sheets.js'
 
+const BATCH_SIZE = 100;
+
 export const handler = async () => {
     try {
         const accessToken = await getAccessToken();
-
         const messages = await listVintedMessages(accessToken);
         console.log(`Messages Vinted trouvés : ${messages.length}`);
 
-        for (const msg of messages) {
-            console.log('- ID du message :', msg.id);
-            console.log('message', msg);
+        // On ne traite que les BATCH_SIZE premiers messages
+        const batch = messages.slice(0, BATCH_SIZE);
+
+        const datas = [];
+        for (const msg of batch) {
             const html = await getMessageContent(accessToken, msg.id);
-            if (!html) {
-                console.log('- Aucune partie HTML trouvée dans le message.');
-                continue;
-            }
-            console.log('- Contenu HTML :', html);
-
+            if (!html) continue; 
             const data = extractVintedData(html);
-            console.log('- Données extraites :', data);
-            if (!data) {
-                console.log('- Aucune donnée trouvée dans le message.');
-                continue;
-            }
-
-            await appendToSheet(data);
-
+            if (!data) continue; 
+            datas.push(data);
             await addLabelToMessage(accessToken, msg.id);
+        }
+        
+        await appendToSheet(datas);
+
+        // Indique s'il reste des messages à traiter
+        const reste = messages.length - batch.length;
+        if (reste > 0) {
+            console.log(`Il reste ${reste} messages à traiter. Relance la Lambda.`);
         }
 
         return { statusCode: 200, body: 'OK' };
