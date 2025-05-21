@@ -8,7 +8,7 @@ export async function listVintedMessages(accessToken) {
       const response = await axios.get('https://gmail.googleapis.com/gmail/v1/users/me/messages', {
         headers: { Authorization: `Bearer ${accessToken}` },
         params: {
-          q: 'from:no-reply@vinted.fr subject:"Ton reçu pour la commande" -label:vinted-traite',
+          q: 'from:no-reply@vinted.fr subject:"Ton reçu pour la commande" -label:vinted-achat',
           maxResults: 100,
           pageToken: nextPageToken
         }
