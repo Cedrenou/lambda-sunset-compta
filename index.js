@@ -1,5 +1,5 @@
 import { getAccessToken } from './auth.js';
-import {addLabelToMessage, getMessageContent, listVintedMessages} from './gmail.js'
+import {addLabelToMessage, getMessageContent, listVintedMessages, ensureLabelId} from './gmail.js'
 import {extractVintedData} from './parser.js'
 import {appendToSheet} from './sheets.js'
 
