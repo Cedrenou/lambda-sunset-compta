@@ -3,7 +3,7 @@ import {addLabelToMessage, getMessageContent, listVintedMessages} from './gmail.
 import {extractVintedData} from './parser.js'
 import {appendToSheet} from './sheets.js'
 
-const BATCH_SIZE = 200;
+const BATCH_SIZE = 100;
 
 export const handler = async () => {
     try {
