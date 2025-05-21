@@ -30,7 +30,11 @@ export const handler = async () => {
                 continue;
             }
             datas.push(data);
-            await addLabelToMessage(accessToken, msg.id);
+            try {
+                await addLabelToMessage(accessToken, msg.id);
+            } catch (err) {
+                console.error(`[Labellisation échouée] pour le message ID: ${msg.id} - Erreur: ${err.message}`);
+            }
         }
         
         await appendToSheet(datas);
