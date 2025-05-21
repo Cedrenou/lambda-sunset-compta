@@ -123,6 +123,34 @@ export async function appendToSheet(datas) {
 
     console.log(`☑️ Checkbox appliquées dynamiquement jusqu'à la ligne ${endRowIndex}`);
 
+    // Supprime la ligne TOTAL existante si elle existe
+    const allRowsResp = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${monthLabel}!A1:I`,
+    });
+    const allRows = allRowsResp.data.values || [];
+    const totalRowIdx = allRows.findIndex(row => row[0] && row[0].toString().toUpperCase().includes('TOTAL'));
+    if (totalRowIdx !== -1) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId,
+                  dimension: 'ROWS',
+                  startIndex: totalRowIdx,
+                  endIndex: totalRowIdx + 1
+                }
+              }
+            }
+          ]
+        }
+      });
+      console.log(`🗑️ Ligne TOTAL supprimée à l'index ${totalRowIdx + 1} dans l'onglet "${monthLabel}"`);
+    }
+
     // Ajoute une ligne de total en bas du tableau
     const totalRowIndex = rowCount + 2; // +2 car header + 1ère ligne = 2
     const totalRow = [
