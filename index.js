@@ -14,6 +14,7 @@ export const handler = async () => {
         // On ne traite que les BATCH_SIZE premiers messages
         const batch = messages.slice(0, BATCH_SIZE);
 
+        const labelId = await ensureLabelId(accessToken, 'vinted-achats');
         const datas = [];
         for (const msg of batch) {
             const html = await getMessageContent(accessToken, msg.id);
@@ -32,7 +33,7 @@ export const handler = async () => {
             datas.push(data);
             console.log(`[Labellisation] Tentative d'ajout du label pour le message ID: ${msg.id}`);
             try {
-                await addLabelToMessage(accessToken, msg.id);
+                await addLabelToMessage(accessToken, msg.id, labelId);
             } catch (err) {
                 console.error(`[Labellisation échouée] pour le message ID: ${msg.id} - Erreur: ${err.message}`);
             }

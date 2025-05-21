@@ -77,9 +77,7 @@ export async function ensureLabelId(accessToken, labelName) {
 }
 
 
-export async function addLabelToMessage(accessToken, messageId, labelName = 'vinted-achats') {
-    const labelId = await ensureLabelId(accessToken, labelName);
-
+export async function addLabelToMessage(accessToken, messageId, labelId) {
     await axios.post(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}/modify`,
         {
@@ -92,5 +90,6 @@ export async function addLabelToMessage(accessToken, messageId, labelName = 'vin
         console.log(`[Labellisation API] Réponse pour ${messageId}:`, response.data);
     });
 
-    console.log(`🏷️ Message ${messageId} étiqueté avec "${labelName}"`);
+    console.log(`🏷️ Message ${messageId} étiqueté avec l'ID "${labelId}"`);
 }
+
