@@ -17,6 +17,7 @@ export function extractVintedData(html) {
         montant_commande: match(/commande\s*:\s*([\d,]+)/),
         frais_protection: match(/Protection acheteurs\s*:\s*([\d,]+)/),
         date_paiement: match(/Date du paiement\s*:\s*([0-9:\-\s]+)/),
-        transaction_id: match(/N° de transaction\s*:\s*(\d+)/)
+        transaction_id: match(/N° de transaction\s*:\s*(\d+)/),
+        reduction: match(/Réduction\s*:\s*([\d,]+) ?€?/)
     };
 }
