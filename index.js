@@ -17,9 +17,18 @@ export const handler = async () => {
         const datas = [];
         for (const msg of batch) {
             const html = await getMessageContent(accessToken, msg.id);
-            if (!html) continue; 
+            if (!html) {
+                console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
+                continue;
+            }
             const data = extractVintedData(html);
-            if (!data) continue; 
+            if (!data) {
+                // Log détaillé pour retrouver le mail
+                console.log(`[Extraction échouée] Données non extraites pour le message ID: ${msg.id}`);
+                // Optionnel : log un extrait du HTML pour aider au debug
+                console.log(`[Extrait HTML]`, html.substring(0, 200));
+                continue;
+            }
             datas.push(data);
             await addLabelToMessage(accessToken, msg.id);
         }
