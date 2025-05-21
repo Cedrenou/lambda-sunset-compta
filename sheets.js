@@ -122,5 +122,26 @@ export async function appendToSheet(datas) {
     });
 
     console.log(`☑️ Checkbox appliquées dynamiquement jusqu'à la ligne ${endRowIndex}`);
+
+    // Ajoute une ligne de total en bas du tableau
+    const totalRowIndex = rowCount + 2; // +2 car header + 1ère ligne = 2
+    const totalRow = [
+      'TOTAL',
+      '',
+      '',
+      `=SUM(D2:D${rowCount+1})`, // Montant total
+      `=SUM(E2:E${rowCount+1})`, // Frais port
+      `=SUM(F2:F${rowCount+1})`, // Montant article
+      `=SUM(G2:G${rowCount+1})`, // Frais protection
+      '',
+      ''
+    ];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${monthLabel}!A${totalRowIndex}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [totalRow] }
+    });
+    console.log(`🧮 Ligne de total ajoutée à la ligne ${totalRowIndex} de l'onglet "${monthLabel}"`);
   }
 }
