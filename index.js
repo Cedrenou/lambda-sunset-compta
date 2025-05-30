@@ -35,7 +35,7 @@ export const handler = async () => {
             try {
                 await addLabelToMessage(accessToken, msg.id, labelId);
             } catch (err) {
-                console.error(`[Labellisation échouée] pour le message ID: ${msg.id} - Erreur: ${err.message}`);
+                console.error(`[Labellisation échouée] pour le message ID: ${msg.id} - Erreur: ${err.message}`, err.response?.data, err.stack);
             }
         }
         
@@ -49,7 +49,7 @@ export const handler = async () => {
 
         return { statusCode: 200, body: 'OK' };
     } catch (err) {
-        console.error('Erreur Lambda :', err.message);
+        console.error('Erreur Lambda :', err.message, err.stack, err.response?.data);
         return { statusCode: 500, body: 'Erreur' };
     }
 };
