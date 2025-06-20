@@ -23,7 +23,7 @@ export function extractVintedData(html) {
     };
 }
 
-export function extractVintedBoostData(html, internalDate, messageId) {
+export function extractVintedBoostData(html, internalDate) {
     const $ = cheerio.load(html);
     // On préserve les sauts de ligne pour pouvoir cibler la ligne sous le total
     const text = $('body').text().replace(/[ \t]+/g, ' ').trim();
@@ -33,14 +33,18 @@ export function extractVintedBoostData(html, internalDate, messageId) {
         return result && result[1] ? result[1].trim() : undefined;
     };
 
+    const getFloat = (regex) => {
+        const str = match(regex);
+        return str ? parseFloat(str.replace(',', '.')) : undefined;
+    };
+
     const date = internalDate ? dayjs(parseInt(internalDate)).format('YYYY-MM-DD HH:mm') : undefined;
 
     return {
         date_boost: date,
-        montant_boost: match(/Boost international de \d+ jours.*?\s+([\d,.]+)\s*€/)?.replace(',', '.'),
-        reduction: match(/Réduction\s+-([\d,.]+)\s*€/)?.replace(',', '.'),
-        montant_total: match(/Total\s+([\d,.]+)\s*€/)?.replace(',', '.'),
-        moyen_paiement: match(/Total\s+[\d,.]+\s*€\s*\n\s*([^\n\r]+)/),
-        transaction_id: messageId
+        montant_boost: getFloat(/Boost international de \d+ jours.*?\s+([\d,.]+)\s*€/),
+        reduction: getFloat(/Réduction\s+-([\d,.]+)\s*€/),
+        montant_total: getFloat(/Total\s+([\d,.]+)\s*€/),
+        moyen_paiement: match(/Total\s+[\d,.]+\s*€\s*\n\s*([^\n\r]+)/)
     };
 }

@@ -212,8 +212,7 @@ export async function appendBoostToSheet(datas) {
 
       // Ajoute l'en-tête pour les boosts
       const headers = [[
-        'Date', 'Montant Boost', 'Réduction', 'Montant Total',
-        'Moyen de Paiement', 'ID Transaction', 'Vérifié'
+        'Date', 'Montant Boost', 'Réduction', 'Montant Total', 'Moyen de Paiement'
       ]];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -223,24 +222,14 @@ export async function appendBoostToSheet(datas) {
       });
     }
 
-    // Récupère les IDs existants une seule fois
-    const existingIdsResp = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: `${monthLabel}!F2:F`
-    });
-    const existingIds = (existingIdsResp.data.values || []).flat();
-
-    // Filtre les nouvelles factures
+    // Il n'y a plus de déduplication ici, on se fie au label Gmail
     const newValues = monthDatas
-      .filter(data => !existingIds.includes(data.transaction_id))
       .map(data => [
         data.date_boost,
         data.montant_boost,
         data.reduction,
         data.montant_total,
         data.moyen_paiement,
-        data.transaction_id,
-        false
       ]);
 
     if (newValues.length === 0) {
@@ -258,44 +247,10 @@ export async function appendBoostToSheet(datas) {
 
     console.log(`✅ ${newValues.length} données boost ajoutées à l'onglet "${monthLabel}"`);
 
-    // Met à jour la validation checkbox
-    const dataRangeResp = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: `${monthLabel}!A2:A`
-    });
-    const rowCount = (dataRangeResp.data.values || []).filter(row => row[0]?.trim() !== '').length;
-    const endRowIndex = rowCount + 1;
-
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId,
-      requestBody: {
-        requests: [
-          {
-            setDataValidation: {
-              range: {
-                sheetId,
-                startRowIndex: 1,
-                endRowIndex: endRowIndex,
-                startColumnIndex: 6,
-                endColumnIndex: 7
-              },
-              rule: {
-                condition: { type: 'BOOLEAN' },
-                strict: true,
-                showCustomUi: true
-              }
-            }
-          }
-        ]
-      }
-    });
-
-    console.log(`☑️ Checkbox appliquées dynamiquement jusqu'à la ligne ${endRowIndex}`);
-
     // Supprime la ligne TOTAL existante si elle existe
     const allRowsResp = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${monthLabel}!A1:H`,
+      range: `${monthLabel}!A1:E`,
     });
     const allRows = allRowsResp.data.values || [];
     const totalRowIdx = allRows.findIndex(row => row[0] && row[0].toString().toUpperCase().includes('TOTAL'));
@@ -320,6 +275,13 @@ export async function appendBoostToSheet(datas) {
       console.log(`🗑️ Ligne TOTAL supprimée à l'index ${totalRowIdx + 1} dans l'onglet "${monthLabel}"`);
     }
 
+    // Récupère le nombre de lignes pour la nouvelle ligne de total
+    const dataRangeResp = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${monthLabel}!A2:A`
+    });
+    const rowCount = (dataRangeResp.data.values || []).filter(row => row[0]?.trim() !== '').length;
+
     // Ajoute une ligne de total en bas du tableau
     const totalRowIndex = rowCount + 2; // +2 car header + 1ère ligne = 2
     const totalRow = [
@@ -327,8 +289,6 @@ export async function appendBoostToSheet(datas) {
       `=SUM(B2:B${rowCount+1})`, // Montant boost
       `=SUM(C2:C${rowCount+1})`, // Réduction
       `=SUM(D2:D${rowCount+1})`, // Montant Total
-      '',
-      '',
       ''
     ];
     await sheets.spreadsheets.values.update({
