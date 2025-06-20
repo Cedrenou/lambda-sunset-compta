@@ -212,8 +212,8 @@ export async function appendBoostToSheet(datas) {
 
       // Ajoute l'en-tête pour les boosts
       const headers = [[
-        'Date facture', 'Période', 'Montant total', 'Nombre articles',
-        'Frais boost', 'Numéro facture', 'Statut', 'Vérifié'
+        'Date', 'Montant Boost', 'Réduction', 'Montant Total',
+        'Moyen de Paiement', 'ID Transaction', 'Vérifié'
       ]];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -232,15 +232,14 @@ export async function appendBoostToSheet(datas) {
 
     // Filtre les nouvelles factures
     const newValues = monthDatas
-      .filter(data => !existingIds.includes(data.numero_facture))
+      .filter(data => !existingIds.includes(data.transaction_id))
       .map(data => [
-        data.date_facture,
-        data.periode,
+        data.date_boost,
+        data.montant_boost,
+        data.reduction,
         data.montant_total,
-        data.nombre_articles,
-        data.frais_boost,
-        data.numero_facture,
-        data.statut,
+        data.moyen_paiement,
+        data.transaction_id,
         false
       ]);
 
@@ -277,8 +276,8 @@ export async function appendBoostToSheet(datas) {
                 sheetId,
                 startRowIndex: 1,
                 endRowIndex: endRowIndex,
-                startColumnIndex: 7,
-                endColumnIndex: 8
+                startColumnIndex: 6,
+                endColumnIndex: 7
               },
               rule: {
                 condition: { type: 'BOOLEAN' },
@@ -325,10 +324,9 @@ export async function appendBoostToSheet(datas) {
     const totalRowIndex = rowCount + 2; // +2 car header + 1ère ligne = 2
     const totalRow = [
       'TOTAL',
-      '',
-      `=SUM(C2:C${rowCount+1})`, // Montant total
-      `=SUM(D2:D${rowCount+1})`, // Nombre articles
-      `=SUM(E2:E${rowCount+1})`, // Frais boost
+      `=SUM(B2:B${rowCount+1})`, // Montant boost
+      `=SUM(C2:C${rowCount+1})`, // Réduction
+      `=SUM(D2:D${rowCount+1})`, // Montant Total
       '',
       '',
       ''

@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import dayjs from 'dayjs';
 
 export function extractVintedData(html) {
     const $ = cheerio.load(html);
@@ -22,22 +23,24 @@ export function extractVintedData(html) {
     };
 }
 
-export function extractVintedBoostData(html) {
+export function extractVintedBoostData(html, internalDate, messageId) {
     const $ = cheerio.load(html);
-    const text = $('body').text().replace(/\s+/g, ' ').trim();
+    // On préserve les sauts de ligne pour pouvoir cibler la ligne sous le total
+    const text = $('body').text().replace(/[ \t]+/g, ' ').trim();
 
     const match = (regex) => {
         const result = text.match(regex);
-        return result ? result[1].trim() : undefined;
+        return result && result[1] ? result[1].trim() : undefined;
     };
 
+    const date = internalDate ? dayjs(parseInt(internalDate)).format('YYYY-MM-DD HH:mm') : undefined;
+
     return {
-        date_facture: match(/Date de facturation\s*:\s*([0-9:\-\s]+)/),
-        periode: match(/Période\s*:\s*(.+?)\s+Montant/),
-        montant_total: match(/Montant total\s*:\s*([\d,]+)/),
-        nombre_articles: match(/(\d+)\s+articles? boostés?/),
-        frais_boost: match(/Frais de boost\s*:\s*([\d,]+)/),
-        numero_facture: match(/N° de facture\s*:\s*(\d+)/),
-        statut: match(/Statut\s*:\s*(.+?)\s+Date/)
+        date_boost: date,
+        montant_boost: match(/Boost international de \d+ jours.*?\s+([\d,.]+)\s*€/)?.replace(',', '.'),
+        reduction: match(/Réduction\s+-([\d,.]+)\s*€/)?.replace(',', '.'),
+        montant_total: match(/Total\s+([\d,.]+)\s*€/)?.replace(',', '.'),
+        moyen_paiement: match(/Total\s+[\d,.]+\s*€\s*\n\s*([^\n\r]+)/),
+        transaction_id: messageId
     };
 }

@@ -54,24 +54,24 @@ export async function getMessageContent(accessToken, messageId) {
         }
     });
 
-    console.log('Response : ',response.data)
-
     const payload = response.data.payload;
+    const internalDate = response.data.internalDate;
 
+    let html = null;
     // CAS 1 : multipart → on cherche le HTML dans les parties
     if (payload.parts) {
         const htmlPart = payload.parts.find(p => p.mimeType === 'text/html');
         if (htmlPart?.body?.data) {
-            return Buffer.from(htmlPart.body.data, 'base64').toString('utf8');
+            html = Buffer.from(htmlPart.body.data, 'base64').toString('utf8');
         }
     }
 
     // CAS 2 : pas multipart → le HTML est directement dans payload.body
-    if (payload.mimeType === 'text/html' && payload.body?.data) {
-        return Buffer.from(payload.body.data, 'base64').toString('utf8');
+    else if (payload.mimeType === 'text/html' && payload.body?.data) {
+        html = Buffer.from(payload.body.data, 'base64').toString('utf8');
     }
 
-    return null; // Si on ne trouve rien
+    return { html, internalDate };
 }
 
 export async function ensureLabelId(accessToken, labelName) {

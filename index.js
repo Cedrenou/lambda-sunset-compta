@@ -19,7 +19,7 @@ export const handler = async () => {
         const datasAchats = [];
         
         for (const msg of batchAchats) {
-            const html = await getMessageContent(accessToken, msg.id);
+            const { html } = await getMessageContent(accessToken, msg.id);
             if (!html) {
                 console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
                 continue;
@@ -51,12 +51,12 @@ export const handler = async () => {
         const datasBoost = [];
         
         for (const msg of batchBoost) {
-            const html = await getMessageContent(accessToken, msg.id);
+            const { html, internalDate } = await getMessageContent(accessToken, msg.id);
             if (!html) {
                 console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
                 continue;
             }
-            const data = extractVintedBoostData(html);
+            const data = extractVintedBoostData(html, internalDate, msg.id);
             if (!data) {
                 console.log(`[Extraction échouée] Données non extraites pour le message ID: ${msg.id}`);
                 console.log(`[Extrait HTML]`, html.substring(0, 200));
