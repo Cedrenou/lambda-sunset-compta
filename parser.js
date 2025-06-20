@@ -42,7 +42,7 @@ export function extractVintedBoostData(html, internalDate) {
 
     return {
         date_boost: date,
-        montant_boost: getFloat(/Boost international de \d+ jours.*?\s+([\d,.]+)\s*€/),
+        montant_boost: getFloat(/Boost .*? de \d+ jours.*?\s+([\d,.]+)\s*€/),
         reduction: getFloat(/Réduction\s+-([\d,.]+)\s*€/),
         montant_total: getFloat(/Total\s+([\d,.]+)\s*€/),
         moyen_paiement: match(/Total\s+[\d,.]+\s*€\s*\n\s*([^\n\r]+)/)
