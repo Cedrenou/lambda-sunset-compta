@@ -21,3 +21,23 @@ export function extractVintedData(html) {
         reduction: match(/Réduction\s*:\s*([\d,]+) ?€?/)
     };
 }
+
+export function extractVintedBoostData(html) {
+    const $ = cheerio.load(html);
+    const text = $('body').text().replace(/\s+/g, ' ').trim();
+
+    const match = (regex) => {
+        const result = text.match(regex);
+        return result ? result[1].trim() : undefined;
+    };
+
+    return {
+        date_facture: match(/Date de facturation\s*:\s*([0-9:\-\s]+)/),
+        periode: match(/Période\s*:\s*(.+?)\s+Montant/),
+        montant_total: match(/Montant total\s*:\s*([\d,]+)/),
+        nombre_articles: match(/(\d+)\s+articles? boostés?/),
+        frais_boost: match(/Frais de boost\s*:\s*([\d,]+)/),
+        numero_facture: match(/N° de facture\s*:\s*(\d+)/),
+        statut: match(/Statut\s*:\s*(.+?)\s+Date/)
+    };
+}
