@@ -189,7 +189,7 @@ export async function appendBoostToSheet(datas) {
   // Regroupe les datas par mois
   const datasByMonth = {};
   for (const data of datas) {
-    const monthLabel = dayjs(data.date_facture, 'YYYY-MM-DD HH:mm').format('MMMM YYYY');
+    const monthLabel = dayjs(data.date_boost).format('MMMM YYYY');
     if (!datasByMonth[monthLabel]) datasByMonth[monthLabel] = [];
     datasByMonth[monthLabel].push(data);
   }
@@ -225,7 +225,7 @@ export async function appendBoostToSheet(datas) {
     // Il n'y a plus de déduplication ici, on se fie au label Gmail
     const newValues = monthDatas
       .map(data => [
-        data.date_boost,
+        dayjs(data.date_boost).format('YYYY-MM-DD HH:mm'),
         data.montant_boost,
         data.reduction,
         data.montant_total,

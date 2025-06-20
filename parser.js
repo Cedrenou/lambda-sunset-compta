@@ -67,7 +67,7 @@ export function extractVintedVitrineData(html, internalDate) {
 
     // On mappe les données de la vitrine sur la structure existante
     return {
-        date_boost: date,
+        date_boost: internalDate ? parseInt(internalDate) : undefined,
         montant_boost: getFloat(/Dressing en Vitrine.*?\s+([\d,.]+)\s*€/),
         reduction: getFloat(/Réduction\s+-([\d,.]+)\s*€/),
         montant_total: getFloat(/Total\s+([\d,.]+)\s*€/),
