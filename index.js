@@ -1,6 +1,11 @@
 import { getAccessToken } from './auth.js';
-import {addLabelToMessage, getMessageContent, listVintedMessages, listVintedBoostMessages, ensureLabelId} from './gmail.js'
-import {extractVintedData, extractVintedBoostData} from './parser.js'
+import {
+    addLabelToMessage, getMessageContent, ensureLabelId,
+    listVintedMessages, listVintedBoostMessages, listVintedVitrineMessages
+} from './gmail.js'
+import {
+    extractVintedData, extractVintedBoostData, extractVintedVitrineData
+} from './parser.js'
 import {appendToSheet, appendBoostToSheet} from './sheets.js'
 
 const BATCH_SIZE = 100;
@@ -56,7 +61,7 @@ export const handler = async () => {
                 console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
                 continue;
             }
-            const data = extractVintedBoostData(html, internalDate, msg.id);
+            const data = extractVintedBoostData(html, internalDate);
             if (!data) {
                 console.log(`[Extraction échouée] Données non extraites pour le message ID: ${msg.id}`);
                 console.log(`[Extrait HTML]`, html.substring(0, 200));
@@ -73,12 +78,45 @@ export const handler = async () => {
         
         await appendBoostToSheet(datasBoost);
 
+        // Traitement des mails de Dressing en Vitrine
+        console.log('=== TRAITEMENT DES DRESSING EN VITRINE ===');
+        const messagesVitrine = await listVintedVitrineMessages(accessToken);
+        console.log(`Messages Vinted Vitrine trouvés : ${messagesVitrine.length}`);
+
+        const batchVitrine = messagesVitrine.slice(0, BATCH_SIZE);
+        const datasVitrine = [];
+        
+        for (const msg of batchVitrine) {
+            const { html, internalDate } = await getMessageContent(accessToken, msg.id);
+            if (!html) {
+                console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
+                continue;
+            }
+            const data = extractVintedVitrineData(html, internalDate);
+            if (!data) {
+                console.log(`[Extraction échouée] Données non extraites pour le message ID: ${msg.id}`);
+                console.log(`[Extrait HTML]`, html.substring(0, 200));
+                continue;
+            }
+            datasVitrine.push(data);
+            console.log(`[Labellisation] Tentative d'ajout du label pour le message ID: ${msg.id}`);
+            try {
+                // On utilise le même label que pour les boosts pour éviter de retraiter
+                await addLabelToMessage(accessToken, msg.id, labelIdBoost);
+            } catch (err) {
+                console.error(`[Labellisation échouée] pour le message ID: ${msg.id} - Erreur: ${err.message}`, err.response?.data, err.stack);
+            }
+        }
+        
+        await appendBoostToSheet(datasVitrine);
+
         // Indique s'il reste des messages à traiter
         const resteAchats = messagesAchats.length - batchAchats.length;
         const resteBoost = messagesBoost.length - batchBoost.length;
+        const resteVitrine = messagesVitrine.length - batchVitrine.length;
         
-        if (resteAchats > 0 || resteBoost > 0) {
-            console.log(`Il reste ${resteAchats} messages achats et ${resteBoost} messages boost à traiter. Relance la Lambda.`);
+        if (resteAchats > 0 || resteBoost > 0 || resteVitrine > 0) {
+            console.log(`Il reste ${resteAchats} messages achats, ${resteBoost} messages boost et ${resteVitrine} messages vitrine à traiter. Relance la Lambda.`);
         }
 
         return { statusCode: 200, body: 'OK' };

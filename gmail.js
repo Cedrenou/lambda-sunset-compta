@@ -44,6 +44,28 @@ export async function listVintedBoostMessages(accessToken) {
     return allMessages;
   }
 
+export async function listVintedVitrineMessages(accessToken) {
+    const allMessages = [];
+    let nextPageToken = null;
+  
+    do {
+      const response = await axios.get('https://gmail.googleapis.com/gmail/v1/users/me/messages', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: {
+          q: 'from:no-reply@vinted.fr subject:"Dressing en Vitrine - Ta facture" -label:vinted-boost',
+          maxResults: 100,
+          pageToken: nextPageToken
+        }
+      });
+  
+      const messages = response.data.messages || [];
+      allMessages.push(...messages);
+      nextPageToken = response.data.nextPageToken;
+    } while (nextPageToken);
+  
+    return allMessages;
+  }
+
 export async function getMessageContent(accessToken, messageId) {
     const response = await axios.get(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}`, {
         headers: {

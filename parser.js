@@ -48,3 +48,29 @@ export function extractVintedBoostData(html, internalDate) {
         moyen_paiement: match(/Total\s+[\d,.]+\s*€\s*\n\s*([^\n\r]+)/)
     };
 }
+
+export function extractVintedVitrineData(html, internalDate) {
+    const $ = cheerio.load(html);
+    const text = $('body').text().replace(/[ \t]+/g, ' ').trim();
+
+    const match = (regex) => {
+        const result = text.match(regex);
+        return result && result[1] ? result[1].trim() : undefined;
+    };
+
+    const getFloat = (regex) => {
+        const str = match(regex);
+        return str ? parseFloat(str.replace(',', '.')) : undefined;
+    };
+
+    const date = internalDate ? dayjs(parseInt(internalDate)).format('YYYY-MM-DD HH:mm') : undefined;
+
+    // On mappe les données de la vitrine sur la structure existante
+    return {
+        date_boost: date,
+        montant_boost: getFloat(/Dressing en Vitrine.*?\s+([\d,.]+)\s*€/),
+        reduction: getFloat(/Réduction\s+-([\d,.]+)\s*€/),
+        montant_total: getFloat(/Total\s+([\d,.]+)\s*€/),
+        moyen_paiement: match(/Total\s+[\d,.]+\s*€\s*\n\s*([^\n\r]+)/)
+    };
+}
