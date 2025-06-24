@@ -59,6 +59,13 @@ export async function appendToSheet(datas) {
     });
     const existingIds = (existingIdsResp.data.values || []).flat();
 
+    // Trie les données du mois par date_paiement (ordre croissant)
+    monthDatas.sort((a, b) => {
+      if (!a.date_paiement) return 1;
+      if (!b.date_paiement) return -1;
+      return a.date_paiement.localeCompare(b.date_paiement);
+    });
+
     // Filtre les nouvelles transactions
     const newValues = monthDatas
       .filter(data => !existingIds.includes(data.transaction_id))
@@ -108,8 +115,8 @@ export async function appendToSheet(datas) {
                 sheetId,
                 startRowIndex: 1,
                 endRowIndex: endRowIndex,
-                startColumnIndex: 8,
-                endColumnIndex: 9
+                startColumnIndex: 9,
+                endColumnIndex: 10
               },
               rule: {
                 condition: { type: 'BOOLEAN' },
