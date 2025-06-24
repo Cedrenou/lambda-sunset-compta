@@ -42,7 +42,7 @@ export async function appendToSheet(datas) {
       const headers = [[
         'Date', 'Article', 'Bénéficiaire', 'Montant total',
         'Frais port', 'Montant article', 'Frais protection',
-        'Transaction ID', 'Vérifié'
+        'Transaction ID', 'Mode de paiement', 'Vérifié'
       ]];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -71,6 +71,7 @@ export async function appendToSheet(datas) {
         data.montant_commande,
         data.frais_protection,
         data.transaction_id,
+        data.mode_paiement,
         false
       ]);
 
@@ -126,7 +127,7 @@ export async function appendToSheet(datas) {
     // Supprime la ligne TOTAL existante si elle existe
     const allRowsResp = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${monthLabel}!A1:I`,
+      range: `${monthLabel}!A1:J`,
     });
     const allRows = allRowsResp.data.values || [];
     const totalRowIdx = allRows.findIndex(row => row[0] && row[0].toString().toUpperCase().includes('TOTAL'));
@@ -161,6 +162,7 @@ export async function appendToSheet(datas) {
       `=SUM(E2:E${rowCount+1})`, // Frais port
       `=SUM(F2:F${rowCount+1})`, // Montant article
       `=SUM(G2:G${rowCount+1})`, // Frais protection
+      '',
       '',
       ''
     ];
