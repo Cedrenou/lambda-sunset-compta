@@ -309,3 +309,70 @@ export async function appendBoostToSheet(datas) {
     console.log(`🧮 Ligne de total ajoutée à la ligne ${totalRowIndex} de l'onglet "${monthLabel}"`);
   }
 }
+
+export async function appendTransfertToSheet(datas) {
+  if (!Array.isArray(datas) || datas.length === 0) return;
+
+  const auth = new JWT({
+    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+
+  const sheets = google.sheets({ version: 'v4', auth });
+  const spreadsheetId = process.env.TRANSFERT_SPREADSHEET_ID
+  const sheetName = 'Transferts';
+
+  // Vérifie si l'onglet existe
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  let existingSheet = meta.data.sheets.find(sheet => sheet.properties.title === sheetName);
+  let sheetId = existingSheet?.properties?.sheetId;
+
+  // Crée l'onglet si besoin
+  if (!sheetId) {
+    const res = await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [{ addSheet: { properties: { title: sheetName } } }]
+      }
+    });
+    sheetId = res.data.replies[0].addSheet.properties.sheetId;
+    // Ajoute l'en-tête
+    const headers = [[
+      'Date émission', 'Date réception estimée', 'Bénéficiaire', 'Montant', 'Compte'
+    ]];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${sheetName}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: headers }
+    });
+  }
+
+  // Trie par date émission
+  datas.sort((a, b) => {
+    if (!a.date_emission) return 1;
+    if (!b.date_emission) return -1;
+    return a.date_emission.localeCompare(b.date_emission);
+  });
+
+  // Prépare les valeurs
+  const newValues = datas.map(data => [
+    data.date_emission,
+    data.date_reception,
+    data.beneficiaire,
+    data.montant,
+    data.compte
+  ]);
+
+  if (newValues.length === 0) return;
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${sheetName}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: newValues }
+  });
+
+  console.log(`✅ ${newValues.length} transferts ajoutés à l'onglet "${sheetName}"`);
+}

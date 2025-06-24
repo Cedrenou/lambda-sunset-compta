@@ -75,3 +75,21 @@ export function extractVintedVitrineData(html, internalDate) {
         moyen_paiement: match(/Total\s+[\d,.]+\s*€\s*\n\s*([^\n\r]+)/)
     };
 }
+
+export function extractVintedTransfertData(html) {
+    const $ = cheerio.load(html);
+    const text = $('body').text().replace(/\s+/g, ' ').trim();
+
+    const match = (regex) => {
+        const result = text.match(regex);
+        return result ? result[1].trim() : undefined;
+    };
+
+    return {
+        beneficiaire: match(/Bénéficiaire\s*:\s*([^\n]+?)\s+Montant du/),
+        montant: match(/Montant du\s*transfert\s*:\s*([\d,.]+)\s*€/),
+        compte: match(/N° du compte\s*:\s*([^\n]+?)\s+Transfert émit/),
+        date_emission: match(/Transfert émit le\s*:\s*([0-9:\-\s]+)/),
+        date_reception: match(/Réception estimée du\s*transfert\s*:\s*([0-9\/]+)/)
+    };
+}

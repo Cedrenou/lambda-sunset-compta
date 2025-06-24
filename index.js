@@ -1,12 +1,14 @@
 import { getAccessToken } from './auth.js';
 import {
     addLabelToMessage, getMessageContent, ensureLabelId,
-    listVintedMessages, listVintedBoostMessages, listVintedVitrineMessages
+    listVintedMessages, listVintedBoostMessages, listVintedVitrineMessages,
+    listVintedTransfertMessages
 } from './gmail.js'
 import {
-    extractVintedData, extractVintedBoostData, extractVintedVitrineData
+    extractVintedData, extractVintedBoostData, extractVintedVitrineData,
+    extractVintedTransfertData
 } from './parser.js'
-import {appendToSheet, appendBoostToSheet} from './sheets.js'
+import {appendToSheet, appendBoostToSheet, appendTransfertToSheet} from './sheets.js'
 
 const BATCH_SIZE = 100;
 
@@ -109,6 +111,36 @@ export const handler = async () => {
         }
         
         await appendBoostToSheet(datasVitrine);
+
+        // Traitement des mails de transfert bancaire Vinted
+        console.log('=== TRAITEMENT DES TRANSFERTS BANCAIRES VINTED ===');
+        const messagesTransfert = await listVintedTransfertMessages(accessToken);
+        console.log(`Messages Vinted transfert trouvés : ${messagesTransfert.length}`);
+
+        const batchTransfert = messagesTransfert.slice(0, BATCH_SIZE);
+        const labelIdTransfert = await ensureLabelId(accessToken, 'vinted-transfert');
+        const datasTransfert = [];
+        for (const msg of batchTransfert) {
+            const { html } = await getMessageContent(accessToken, msg.id);
+            if (!html) {
+                console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
+                continue;
+            }
+            const data = extractVintedTransfertData(html);
+            if (!data) {
+                console.log(`[Extraction échouée] Données non extraites pour le message ID: ${msg.id}`);
+                console.log(`[Extrait HTML]`, html.substring(0, 200));
+                continue;
+            }
+            datasTransfert.push(data);
+            console.log(`[Labellisation] Tentative d'ajout du label pour le message ID: ${msg.id}`);
+            try {
+                await addLabelToMessage(accessToken, msg.id, labelIdTransfert);
+            } catch (err) {
+                console.error(`[Labellisation échouée] pour le message ID: ${msg.id} - Erreur: ${err.message}`, err.response?.data, err.stack);
+            }
+        }
+        await appendTransfertToSheet(datasTransfert);
 
         // Indique s'il reste des messages à traiter
         const resteAchats = messagesAchats.length - batchAchats.length;
