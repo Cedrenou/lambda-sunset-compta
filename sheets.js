@@ -320,59 +320,68 @@ export async function appendTransfertToSheet(datas) {
   });
 
   const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = process.env.TRANSFERT_SPREADSHEET_ID
-  const sheetName = 'Transferts';
+  const spreadsheetId = process.env.TRANSFERT_SPREADSHEET_ID;
 
-  // Vérifie si l'onglet existe
-  const meta = await sheets.spreadsheets.get({ spreadsheetId });
-  let existingSheet = meta.data.sheets.find(sheet => sheet.properties.title === sheetName);
-  let sheetId = existingSheet?.properties?.sheetId;
-
-  // Crée l'onglet si besoin
-  if (!sheetId) {
-    const res = await sheets.spreadsheets.batchUpdate({
-      spreadsheetId,
-      requestBody: {
-        requests: [{ addSheet: { properties: { title: sheetName } } }]
-      }
-    });
-    sheetId = res.data.replies[0].addSheet.properties.sheetId;
-    // Ajoute l'en-tête
-    const headers = [[
-      'Date émission', 'Date réception estimée', 'Bénéficiaire', 'Montant', 'Compte'
-    ]];
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: `${sheetName}!A1`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: { values: headers }
-    });
+  // Regroupe les datas par mois
+  const datasByMonth = {};
+  for (const data of datas) {
+    const monthLabel = data.date_emission ? dayjs(data.date_emission, 'YYYY-MM-DD HH:mm').format('MMMM YYYY') : 'Sans date';
+    if (!datasByMonth[monthLabel]) datasByMonth[monthLabel] = [];
+    datasByMonth[monthLabel].push(data);
   }
 
-  // Trie par date émission
-  datas.sort((a, b) => {
-    if (!a.date_emission) return 1;
-    if (!b.date_emission) return -1;
-    return a.date_emission.localeCompare(b.date_emission);
-  });
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
 
-  // Prépare les valeurs
-  const newValues = datas.map(data => [
-    data.date_emission,
-    data.date_reception,
-    data.beneficiaire,
-    data.montant,
-    data.compte
-  ]);
+  for (const [monthLabel, monthDatas] of Object.entries(datasByMonth)) {
+    let existingSheet = meta.data.sheets.find(sheet => sheet.properties.title === monthLabel);
+    let sheetId = existingSheet?.properties?.sheetId;
 
-  if (newValues.length === 0) return;
+    // Crée l'onglet si besoin
+    if (!sheetId) {
+      const res = await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{ addSheet: { properties: { title: monthLabel } } }]
+        }
+      });
+      sheetId = res.data.replies[0].addSheet.properties.sheetId;
+      // Ajoute l'en-tête
+      const headers = [[
+        'Date émission', 'Date réception estimée', 'Bénéficiaire', 'Montant', 'Compte'
+      ]];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${monthLabel}!A1`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: headers }
+      });
+    }
 
-  await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range: `${sheetName}!A1`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: newValues }
-  });
+    // Trie par date émission
+    monthDatas.sort((a, b) => {
+      if (!a.date_emission) return 1;
+      if (!b.date_emission) return -1;
+      return a.date_emission.localeCompare(b.date_emission);
+    });
 
-  console.log(`✅ ${newValues.length} transferts ajoutés à l'onglet "${sheetName}"`);
+    // Prépare les valeurs
+    const newValues = monthDatas.map(data => [
+      data.date_emission,
+      data.date_reception,
+      data.beneficiaire,
+      data.montant,
+      data.compte
+    ]);
+
+    if (newValues.length === 0) continue;
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${monthLabel}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: newValues }
+    });
+
+    console.log(`✅ ${newValues.length} transferts ajoutés à l'onglet "${monthLabel}"`);
+  }
 }
