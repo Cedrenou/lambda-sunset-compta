@@ -1,5 +1,9 @@
 import * as cheerio from 'cheerio';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export function extractVintedData(html) {
     const $ = cheerio.load(html);
@@ -103,7 +107,7 @@ export function extractVintedRefundData(html, internalDate) {
         return result ? result[1].trim().replace(/^["']|["']$/g, '') : undefined;
     };
 
-    const dateReception = internalDate ? dayjs(parseInt(internalDate)).format('YYYY-MM-DD HH:mm') : undefined;
+    const dateReception = internalDate ? dayjs(parseInt(internalDate)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm') : undefined;
 
     let dateRemboursement = match(/Remboursement estimé sur Carte bancaire\s*:\s*([0-9\/]+)/);
     if (!dateRemboursement) {
