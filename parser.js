@@ -105,13 +105,24 @@ export function extractVintedRefundData(html, internalDate) {
 
     const dateReception = internalDate ? dayjs(parseInt(internalDate)).format('YYYY-MM-DD HH:mm') : undefined;
 
+    let dateRemboursement = match(/Remboursement estimé sur Carte bancaire\s*:\s*([0-9\/]+)/);
+    if (!dateRemboursement) {
+        // Cherche la date après 'Remboursé dans le porte-monnaie Vinted' (même ligne ou ligne suivante)
+        const porteMonnaieRegex = /Remboursé dans le porte-monnaie Vinted\s*:?\s*([0-9\/]+)/;
+        const porteMonnaieDate = text.match(porteMonnaieRegex);
+        if (porteMonnaieDate && porteMonnaieDate[1]) {
+            dateRemboursement = porteMonnaieDate[1];
+        } else if (text.includes('Remboursé dans le porte-monnaie Vinted')) {
+            dateRemboursement = 'Remboursé dans le porte-monnaie Vinted';
+        }
+    }
     return {
         destinataire: match(/Destinataire\s*:\s*([^\n]+?)\s+Commande/),
-        commande: match(/Commande\s*:\s*([^\"]+\"[^\"]+\")/),
+        commande: match(/Commande\s*:\s*([^"]+\"[^"]+\")/),
         montant: match(/Montant remboursé\s*:\s*([\d,.]+)\s*€/),
         carte: match(/Carte utilisée\s*:\s*([^\n]+?)\s+N° de transaction/),
         transaction_id: match(/N° de transaction\s*:\s*(\d+)/),
-        date_remboursement: match(/Remboursement estimé sur Carte bancaire\s*:\s*([0-9\/]+)/),
+        date_remboursement: dateRemboursement,
         date_reception_mail: dateReception
     };
 }
