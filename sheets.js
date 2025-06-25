@@ -401,7 +401,7 @@ export async function appendRefundToSheet(datas) {
   // Regroupe les datas par mois
   const datasByMonth = {};
   for (const data of datas) {
-    const monthLabel = data.date_remboursement ? dayjs(data.date_remboursement, 'DD/MM/YYYY').format('MMMM YYYY') : 'Sans date';
+    const monthLabel = data.date_reception_mail ? dayjs(data.date_reception_mail, 'YYYY-MM-DD HH:mm').format('MMMM YYYY') : 'Sans date';
     if (!datasByMonth[monthLabel]) datasByMonth[monthLabel] = [];
     datasByMonth[monthLabel].push(data);
   }
@@ -435,14 +435,14 @@ export async function appendRefundToSheet(datas) {
 
     // Trie par date remboursement
     monthDatas.sort((a, b) => {
-      if (!a.date_remboursement) return 1;
-      if (!b.date_remboursement) return -1;
-      return a.date_remboursement.localeCompare(b.date_remboursement);
+      if (!a.date_reception_mail) return 1;
+      if (!b.date_reception_mail) return -1;
+      return a.date_reception_mail.localeCompare(b.date_reception_mail);
     });
 
     // Prépare les valeurs
     const newValues = monthDatas.map(data => [
-      data.date_remboursement,
+      data.date_reception_mail,
       data.commande,
       data.montant,
       data.carte,

@@ -94,7 +94,7 @@ export function extractVintedTransfertData(html) {
     };
 }
 
-export function extractVintedRefundData(html) {
+export function extractVintedRefundData(html, internalDate) {
     const $ = cheerio.load(html);
     const text = $('body').text().replace(/\s+/g, ' ').trim();
 
@@ -103,12 +103,15 @@ export function extractVintedRefundData(html) {
         return result ? result[1].trim().replace(/^["']|["']$/g, '') : undefined;
     };
 
+    const dateReception = internalDate ? dayjs(parseInt(internalDate)).format('YYYY-MM-DD HH:mm') : undefined;
+
     return {
         destinataire: match(/Destinataire\s*:\s*([^\n]+?)\s+Commande/),
-        commande: match(/Commande\s*:\s*([^"]+"[^"]+")/),
+        commande: match(/Commande\s*:\s*([^\"]+\"[^\"]+\")/),
         montant: match(/Montant remboursé\s*:\s*([\d,.]+)\s*€/),
         carte: match(/Carte utilisée\s*:\s*([^\n]+?)\s+N° de transaction/),
         transaction_id: match(/N° de transaction\s*:\s*(\d+)/),
-        date_remboursement: match(/Remboursement estimé sur Carte bancaire\s*:\s*([0-9\/]+)/)
+        date_remboursement: match(/Remboursement estimé sur Carte bancaire\s*:\s*([0-9\/]+)/),
+        date_reception_mail: dateReception
     };
 }

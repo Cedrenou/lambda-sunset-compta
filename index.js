@@ -151,12 +151,12 @@ export const handler = async () => {
         const labelIdRefund = await ensureLabelId(accessToken, 'vinted-remboursement');
         const datasRefund = [];
         for (const msg of batchRefund) {
-            const { html } = await getMessageContent(accessToken, msg.id);
+            const { html, internalDate } = await getMessageContent(accessToken, msg.id);
             if (!html) {
                 console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
                 continue;
             }
-            const data = extractVintedRefundData(html);
+            const data = extractVintedRefundData(html, internalDate);
             if (!data) {
                 console.log(`[Extraction échouée] Données non extraites pour le message ID: ${msg.id}`);
                 console.log(`[Extrait HTML]`, html.substring(0, 200));
