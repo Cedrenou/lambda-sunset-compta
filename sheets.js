@@ -423,7 +423,7 @@ export async function appendRefundToSheet(datas) {
       sheetId = res.data.replies[0].addSheet.properties.sheetId;
       // Ajoute l'en-tête
       const headers = [[
-        'Date de réception du mail', 'Date remboursement', 'Article', 'Montant', 'Carte', 'Transaction ID', 'Destinataire'
+        'Date de réception du mail', 'Date remboursement', 'Article', 'Montant', 'Mode de paiement', 'Transaction ID', 'Destinataire'
       ]];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -446,7 +446,7 @@ export async function appendRefundToSheet(datas) {
       data.date_remboursement,
       data.commande,
       data.montant,
-      data.carte,
+      (data.date_remboursement === 'Remboursé dans le porte-monnaie Vinted' ? 'porte-monnaie Vinted' : data.carte),
       data.transaction_id,
       data.destinataire
     ]);
