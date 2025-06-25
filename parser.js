@@ -116,11 +116,16 @@ export function extractVintedRefundData(html, internalDate) {
             dateRemboursement = 'Remboursé dans le porte-monnaie Vinted';
         }
     }
+
+    let modePaiement = match(/Carte utilisée\s*:\s*([^\n]+?)\s+N° de transaction/);
+    if (!modePaiement) {
+        modePaiement = match(/Mode de paiement\s*:\s*([^\n]+?)\s+N° de transaction/);
+    }
     return {
         destinataire: match(/Destinataire\s*:\s*([^\n]+?)\s+Commande/),
-        commande: match(/Commande\s*:\s*([^"]+\"[^"]+\")/),
+        commande: match(/Commande\s*:\s*([^\"]+\"[^\"]+\")/),
         montant: match(/Montant remboursé\s*:\s*([\d,.]+)\s*€/),
-        carte: match(/Carte utilisée\s*:\s*([^\n]+?)\s+N° de transaction/),
+        mode_paiement: modePaiement,
         transaction_id: match(/N° de transaction\s*:\s*(\d+)/),
         date_remboursement: dateRemboursement,
         date_reception_mail: dateReception
