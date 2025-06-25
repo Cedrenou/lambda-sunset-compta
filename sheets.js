@@ -446,7 +446,7 @@ export async function appendRefundToSheet(datas) {
       data.date_remboursement,
       data.commande,
       data.montant,
-      (data.date_remboursement === 'Remboursé dans le porte-monnaie Vinted' ? 'porte-monnaie Vinted' : data.carte),
+      (data.date_remboursement === 'Remboursé dans le porte-monnaie Vinted' ? 'porte-monnaie Vinted' : data.mode_paiement),
       data.transaction_id,
       data.destinataire
     ]);
