@@ -385,3 +385,80 @@ export async function appendTransfertToSheet(datas) {
     console.log(`✅ ${newValues.length} transferts ajoutés à l'onglet "${monthLabel}"`);
   }
 }
+
+export async function appendRefundToSheet(datas) {
+  if (!Array.isArray(datas) || datas.length === 0) return;
+
+  const auth = new JWT({
+    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+
+  const sheets = google.sheets({ version: 'v4', auth });
+  const spreadsheetId = process.env.REFUND_SPREADSHEET_ID
+
+  // Regroupe les datas par mois
+  const datasByMonth = {};
+  for (const data of datas) {
+    const monthLabel = data.date_remboursement ? dayjs(data.date_remboursement, 'DD/MM/YYYY').format('MMMM YYYY') : 'Sans date';
+    if (!datasByMonth[monthLabel]) datasByMonth[monthLabel] = [];
+    datasByMonth[monthLabel].push(data);
+  }
+
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+
+  for (const [monthLabel, monthDatas] of Object.entries(datasByMonth)) {
+    let existingSheet = meta.data.sheets.find(sheet => sheet.properties.title === monthLabel);
+    let sheetId = existingSheet?.properties?.sheetId;
+
+    // Crée l'onglet si besoin
+    if (!sheetId) {
+      const res = await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{ addSheet: { properties: { title: monthLabel } } }]
+        }
+      });
+      sheetId = res.data.replies[0].addSheet.properties.sheetId;
+      // Ajoute l'en-tête
+      const headers = [[
+        'Date remboursement', 'Article', 'Montant', 'Carte', 'Transaction ID', 'Destinataire'
+      ]];
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${monthLabel}!A1`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: headers }
+      });
+    }
+
+    // Trie par date remboursement
+    monthDatas.sort((a, b) => {
+      if (!a.date_remboursement) return 1;
+      if (!b.date_remboursement) return -1;
+      return a.date_remboursement.localeCompare(b.date_remboursement);
+    });
+
+    // Prépare les valeurs
+    const newValues = monthDatas.map(data => [
+      data.date_remboursement,
+      data.commande,
+      data.montant,
+      data.carte,
+      data.transaction_id,
+      data.destinataire
+    ]);
+
+    if (newValues.length === 0) continue;
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${monthLabel}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: newValues }
+    });
+
+    console.log(`✅ ${newValues.length} remboursements ajoutés à l'onglet "${monthLabel}"`);
+  }
+}

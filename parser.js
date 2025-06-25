@@ -93,3 +93,22 @@ export function extractVintedTransfertData(html) {
         date_reception: match(/Réception estimée du\s*transfert\s*:\s*([0-9\/]+)/)
     };
 }
+
+export function extractVintedRefundData(html) {
+    const $ = cheerio.load(html);
+    const text = $('body').text().replace(/\s+/g, ' ').trim();
+
+    const match = (regex) => {
+        const result = text.match(regex);
+        return result ? result[1].trim().replace(/^["']|["']$/g, '') : undefined;
+    };
+
+    return {
+        destinataire: match(/Destinataire\s*:\s*([^\n]+?)\s+Commande/),
+        commande: match(/Commande\s*:\s*([^"]+"[^"]+")/),
+        montant: match(/Montant remboursé\s*:\s*([\d,.]+)\s*€/),
+        carte: match(/Carte utilisée\s*:\s*([^\n]+?)\s+N° de transaction/),
+        transaction_id: match(/N° de transaction\s*:\s*(\d+)/),
+        date_remboursement: match(/Remboursement estimé sur Carte bancaire\s*:\s*([0-9\/]+)/)
+    };
+}

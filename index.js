@@ -2,13 +2,13 @@ import { getAccessToken } from './auth.js';
 import {
     addLabelToMessage, getMessageContent, ensureLabelId,
     listVintedMessages, listVintedBoostMessages, listVintedVitrineMessages,
-    listVintedTransfertMessages
+    listVintedTransfertMessages, listVintedRefundMessages
 } from './gmail.js'
 import {
     extractVintedData, extractVintedBoostData, extractVintedVitrineData,
-    extractVintedTransfertData
+    extractVintedTransfertData, extractVintedRefundData
 } from './parser.js'
-import {appendToSheet, appendBoostToSheet, appendTransfertToSheet} from './sheets.js'
+import {appendToSheet, appendBoostToSheet, appendTransfertToSheet, appendRefundToSheet} from './sheets.js'
 
 const BATCH_SIZE = 100;
 
@@ -141,6 +141,36 @@ export const handler = async () => {
             }
         }
         await appendTransfertToSheet(datasTransfert);
+
+        // Traitement des mails de remboursement Vinted
+        console.log('=== TRAITEMENT DES REMBOURSEMENTS VINTED ===');
+        const messagesRefund = await listVintedRefundMessages(accessToken);
+        console.log(`Messages Vinted remboursement trouvés : ${messagesRefund.length}`);
+
+        const batchRefund = messagesRefund.slice(0, BATCH_SIZE);
+        const labelIdRefund = await ensureLabelId(accessToken, 'vinted-remboursement');
+        const datasRefund = [];
+        for (const msg of batchRefund) {
+            const { html } = await getMessageContent(accessToken, msg.id);
+            if (!html) {
+                console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
+                continue;
+            }
+            const data = extractVintedRefundData(html);
+            if (!data) {
+                console.log(`[Extraction échouée] Données non extraites pour le message ID: ${msg.id}`);
+                console.log(`[Extrait HTML]`, html.substring(0, 200));
+                continue;
+            }
+            datasRefund.push(data);
+            console.log(`[Labellisation] Tentative d'ajout du label pour le message ID: ${msg.id}`);
+            try {
+                await addLabelToMessage(accessToken, msg.id, labelIdRefund);
+            } catch (err) {
+                console.error(`[Labellisation échouée] pour le message ID: ${msg.id} - Erreur: ${err.message}`, err.response?.data, err.stack);
+            }
+        }
+        await appendRefundToSheet(datasRefund);
 
         // Indique s'il reste des messages à traiter
         const resteAchats = messagesAchats.length - batchAchats.length;
