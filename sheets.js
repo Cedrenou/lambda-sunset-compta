@@ -474,63 +474,55 @@ export async function appendSoldToSheet(datas) {
   });
 
   const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = process.env.SOLD_SPREADSHEET_ID
+  const spreadsheetId = process.env.SOLD_SPREADSHEET_ID;
+  const sheetName = 'Ventes';
 
-  // Regroupe les datas par mois
-  const datasByMonth = {};
-  for (const data of datas) {
-    const monthLabel = data.date_reception_mail ? dayjs(data.date_reception_mail, 'YYYY-MM-DD HH:mm').format('MMMM YYYY') : 'Sans date';
-    if (!datasByMonth[monthLabel]) datasByMonth[monthLabel] = [];
-    datasByMonth[monthLabel].push(data);
-  }
-
+  // Vérifie si l'onglet existe
   const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  let existingSheet = meta.data.sheets.find(sheet => sheet.properties.title === sheetName);
+  let sheetId = existingSheet?.properties?.sheetId;
 
-  for (const [monthLabel, monthDatas] of Object.entries(datasByMonth)) {
-    let existingSheet = meta.data.sheets.find(sheet => sheet.properties.title === monthLabel);
-    let sheetId = existingSheet?.properties?.sheetId;
-
-    // Crée l'onglet si besoin
-    if (!sheetId) {
-      const res = await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [{ addSheet: { properties: { title: monthLabel } } }]
-        }
-      });
-      sheetId = res.data.replies[0].addSheet.properties.sheetId;
-      // Ajoute l'en-tête
-      const headers = [[
-        'Email acheteur', 'Nom', 'Rue', 'Ville', 'Code postal', 'Pays', 'Pays (texte)'
-      ]];
-      await sheets.spreadsheets.values.update({
-        spreadsheetId,
-        range: `${monthLabel}!A1`,
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: headers }
-      });
-    }
-
-    // Prépare les valeurs
-    const newValues = monthDatas.map(data => [
-      data.acheteur_email,
-      data.nom,
-      data.rue,
-      data.ville,
-      data.code_postal,
-      data.pays,
-      data.pays_texte
-    ]);
-
-    if (newValues.length === 0) continue;
-
-    await sheets.spreadsheets.values.append({
+  // Crée l'onglet si besoin
+  if (!sheetId) {
+    const res = await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
-      range: `${monthLabel}!A1`,
-      valueInputOption: 'USER_ENTERED',
-      requestBody: { values: newValues }
+      requestBody: {
+        requests: [{ addSheet: { properties: { title: sheetName } } }]
+      }
     });
-
-    console.log(`✅ ${newValues.length} ventes ajoutées à l'onglet "${monthLabel}"`);
+    sheetId = res.data.replies[0].addSheet.properties.sheetId;
+    // Ajoute l'en-tête
+    const headers = [[
+      'Date de réception du mail', 'Email acheteur', 'Nom', 'Rue', 'Ville', 'Code postal', 'Pays', 'Pays (texte)'
+    ]];
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${sheetName}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: headers }
+    });
   }
+
+  // Prépare les valeurs
+  const newValues = datas.map(data => [
+    data.date_reception_mail,
+    data.acheteur_email,
+    data.nom,
+    data.rue,
+    data.ville,
+    data.code_postal,
+    data.pays,
+    data.pays_texte
+  ]);
+
+  if (newValues.length === 0) return;
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `${sheetName}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: newValues }
+  });
+
+  console.log(`✅ ${newValues.length} ventes ajoutées à l'onglet "${sheetName}"`);
 }
