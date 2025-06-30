@@ -156,7 +156,9 @@ export function extractVintedSoldData(html, internalDate) {
         pays = parts[4] || '';
         pays_texte = (parts[5] || '').split(' ')[0]; // Prend juste le premier mot (ex: France)
     }
+    const dateReception = internalDate ? dayjs(parseInt(internalDate)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm') : undefined;
     return {
+        date_reception_mail: dateReception,
         acheteur_email: match(/Adresse e-mail\s*:\s*([\w.-]+@[\w.-]+)/i),
         nom,
         rue,
