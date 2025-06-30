@@ -2,13 +2,13 @@ import { getAccessToken } from './auth.js';
 import {
     addLabelToMessage, getMessageContent, ensureLabelId,
     listVintedMessages, listVintedBoostMessages, listVintedVitrineMessages,
-    listVintedTransfertMessages, listVintedRefundMessages
+    listVintedTransfertMessages, listVintedRefundMessages, listVintedSoldMessages
 } from './gmail.js'
 import {
     extractVintedData, extractVintedBoostData, extractVintedVitrineData,
-    extractVintedTransfertData, extractVintedRefundData
+    extractVintedTransfertData, extractVintedRefundData, extractVintedSoldData
 } from './parser.js'
-import {appendToSheet, appendBoostToSheet, appendTransfertToSheet, appendRefundToSheet} from './sheets.js'
+import {appendToSheet, appendBoostToSheet, appendTransfertToSheet, appendRefundToSheet, appendSoldToSheet} from './sheets.js'
 
 const BATCH_SIZE = 100;
 
@@ -171,6 +171,36 @@ export const handler = async () => {
             }
         }
         await appendRefundToSheet(datasRefund);
+
+        // Traitement des mails de vente Vinted
+        console.log('=== TRAITEMENT DES VENTES VINTED ===');
+        const messagesSold = await listVintedSoldMessages(accessToken);
+        console.log(`Messages Vinted vente trouvés : ${messagesSold.length}`);
+
+        const batchSold = messagesSold.slice(0, BATCH_SIZE);
+        const labelIdSold = await ensureLabelId(accessToken, 'vinted-vente');
+        const datasSold = [];
+        for (const msg of batchSold) {
+            const { html, internalDate } = await getMessageContent(accessToken, msg.id);
+            if (!html) {
+                console.log(`[Extraction échouée] Pas de HTML pour le message ID: ${msg.id}`);
+                continue;
+            }
+            const data = extractVintedSoldData(html, internalDate);
+            if (!data) {
+                console.log(`[Extraction échouée] Données non extraites pour le message ID: ${msg.id}`);
+                console.log(`[Extrait HTML]`, html.substring(0, 200));
+                continue;
+            }
+            datasSold.push(data);
+            console.log(`[Labellisation] Tentative d'ajout du label pour le message ID: ${msg.id}`);
+            try {
+                await addLabelToMessage(accessToken, msg.id, labelIdSold);
+            } catch (err) {
+                console.error(`[Labellisation échouée] pour le message ID: ${msg.id} - Erreur: ${err.message}`, err.response?.data, err.stack);
+            }
+        }
+        await appendSoldToSheet(datasSold);
 
         // Indique s'il reste des messages à traiter
         const resteAchats = messagesAchats.length - batchAchats.length;

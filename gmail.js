@@ -110,6 +110,28 @@ export async function listVintedRefundMessages(accessToken) {
     return allMessages;
 }
 
+export async function listVintedSoldMessages(accessToken) {
+    const allMessages = [];
+    let nextPageToken = null;
+  
+    do {
+      const response = await axios.get('https://gmail.googleapis.com/gmail/v1/users/me/messages', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: {
+          q: "from:no-reply@vinted.fr subject:'ton article s\'est vendu !' -label:vinted-vente",
+          maxResults: 100,
+          pageToken: nextPageToken
+        }
+      });
+  
+      const messages = response.data.messages || [];
+      allMessages.push(...messages);
+      nextPageToken = response.data.nextPageToken;
+    } while (nextPageToken);
+  
+    return allMessages;
+}
+
 export async function getMessageContent(accessToken, messageId) {
     const response = await axios.get(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}`, {
         headers: {
