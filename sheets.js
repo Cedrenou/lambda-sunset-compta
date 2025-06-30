@@ -501,7 +501,7 @@ export async function appendSoldToSheet(datas) {
       sheetId = res.data.replies[0].addSheet.properties.sheetId;
       // Ajoute l'en-tête
       const headers = [[
-        'Email acheteur', 'Adresse postale'
+        'Email acheteur', 'Nom', 'Rue', 'Ville', 'Code postal', 'Pays', 'Pays (texte)'
       ]];
       await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -514,7 +514,12 @@ export async function appendSoldToSheet(datas) {
     // Prépare les valeurs
     const newValues = monthDatas.map(data => [
       data.acheteur_email,
-      data.adresse_postale
+      data.nom,
+      data.rue,
+      data.ville,
+      data.code_postal,
+      data.pays,
+      data.pays_texte
     ]);
 
     if (newValues.length === 0) continue;
