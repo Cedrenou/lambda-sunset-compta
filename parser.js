@@ -135,3 +135,18 @@ export function extractVintedRefundData(html, internalDate) {
         date_reception_mail: dateReception
     };
 }
+
+export function extractVintedSoldData(html, internalDate) {
+    const $ = cheerio.load(html);
+    const text = $('body').text().replace(/\s+/g, ' ').trim();
+
+    const match = (regex) => {
+        const result = text.match(regex);
+        return result ? result[1].trim() : undefined;
+    };
+
+    return {
+        acheteur_email: match(/Adresse e-mail\s*:\s*([\w.-]+@[\w.-]+)/i),
+        adresse_postale: match(/Adresse\s*:\s*([^\n]+),/)
+    };
+}
