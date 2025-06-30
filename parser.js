@@ -145,7 +145,7 @@ export function extractVintedSoldData(html, internalDate) {
         return result ? result[1].trim() : undefined;
     };
 
-    const adresse = match(/Adresse\s*:\s*([^\n]+),/);
+    const adresse = match(/Adresse\s*:\s*([^\n]+)/);
     let nom = '', rue = '', ville = '', code_postal = '', pays = '', pays_texte = '';
     if (adresse) {
         const parts = adresse.split(',').map(s => s.trim());
@@ -154,7 +154,7 @@ export function extractVintedSoldData(html, internalDate) {
         ville = parts[2] || '';
         code_postal = parts[3] || '';
         pays = parts[4] || '';
-        pays_texte = parts[5] || '';
+        pays_texte = (parts[5] || '').split(' ')[0]; // Prend juste le premier mot (ex: France)
     }
     return {
         acheteur_email: match(/Adresse e-mail\s*:\s*([\w.-]+@[\w.-]+)/i),
