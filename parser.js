@@ -15,16 +15,17 @@ export function extractVintedData(html) {
     };
 
     return {
-        beneficiaire: match(/Bénéficiaire\s*:\s*(.+?)\s+Commande\s*:/),
-        article: match(/Commande\s*:\s*(.+?)\s+Montant payé/),
-        montant_total: match(/Montant payé\s*:\s*([\d,]+)\s/),
-        frais_port: match(/frais de port\s*:\s*([\d,]+)/),
-        montant_commande: match(/commande\s*:\s*([\d,]+)/),
-        frais_protection: match(/Protection acheteurs\s*:\s*([\d,]+)/),
-        date_paiement: match(/Date du paiement\s*:\s*([0-9:\-\s]+)/),
-        transaction_id: match(/N° de transaction\s*:\s*(\d+)/),
-        reduction: match(/Réduction\s*:\s*([\d,]+) ?€?/),
-        mode_paiement: match(/Mode\(s\) de paiement\s*:\s*([^\n]+?)\s+Date du paiement/)
+        beneficiaire: match(/Bénéficiaire\s*:?\s*([^\n]+?)\s+Commande/i),
+        // L'intitulé d'article figure juste après l'entête "Commande" et avant "Montant payé"
+        article: match(/Commande\s*([^\n]+?)\s+Montant payé/i),
+        montant_total: match(/Montant payé\s*:?\s*([\d,.]+)\s*€?/i),
+        frais_port: match(/Frais\s*de\s*port\s*:?\s*([\d,.]+)\s*€?/i),
+        montant_commande: match(/\bCommande\b\s*:?\s*([\d,.]+)\s*€?/i),
+        frais_protection: match(/Frais\s*de\s*Protection\s*acheteurs\s*:?\s*([\d,.]+)\s*€?/i),
+        date_paiement: match(/Date du paiement\s*:?\s*([0-9:\-\s]+)/i),
+        transaction_id: match(/N°\s*de\s*transaction\s*:?\s*(\d+)/i),
+        reduction: match(/Réduction\s*:?\s*-?([\d,.]+)\s*€?/i),
+        mode_paiement: match(/Mode\(s\)\s*de\s*paiement\s*:?\s*([^\n]+?)\s+Date du paiement/i)
     };
 }
 
